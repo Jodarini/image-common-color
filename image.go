@@ -1,19 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
 	"net/http"
-	"os"
 )
 
 type rgb struct {
-	red   uint32
-	green uint32
-	blue  uint32
+	red   uint32 `json:"red"`
+	green uint32 `json:"green"`
+	blue  uint32 `json:"blue"`
 }
 
 func getCommonColor(url string) (rgb, error) {
@@ -50,18 +50,34 @@ func getCommonColor(url string) (rgb, error) {
 	return rgb{r_total, g_total, b_total}, nil
 }
 
-func main() {
-	reader, err := os.Open("./image/CuteCat.png")
-	if err != nil {
-		log.Fatal("Failed to open image: $v", err)
+// Next.js handler
+func Handler(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Query().Get("url")
+	if url == "" {
+		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
+		return
 	}
 
-	defer reader.Close()
-
-	rgb, err := getCommonColor("https://i.scdn.co/image/ab67616d00001e02bfa99afb5ef0d26d5064b23b")
+	rgb, err := getCommonColor(url)
 	if err != nil {
 		log.Fatal("Failed to get common color: $v", err)
 	}
 
-	fmt.Printf("rgb(%v, %v, %v)\n", rgb.red, rgb.green, rgb.blue)
+	fmt.Fprintf(w, "<h1>Hello from Go!</h1> %v", url)
+	fmt.Fprintf(w, "<p>Red: %v</p> <p>Green: %v</p> <p>Blue: %v</p>", rgb.red, rgb.green, rgb.blue)
+
+	color, err := getCommonColor(url)
+	if err != nil {
+		http.Error(w, "Error processing image", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(color)
+}
+
+func main() {
+	http.HandleFunc("/api/color", Handler)
+	fmt.Println("Server started!")
+	http.ListenAndServe(":8081", nil) // Change the port here to 8081
 }
