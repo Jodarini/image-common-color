@@ -5,6 +5,7 @@ import (
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
+	"log"
 	"os"
 )
 
@@ -14,10 +15,10 @@ type rgb struct {
 	blue  uint32
 }
 
-func getMostUsedColor(r *os.File) rgb {
+func getCommonColor(r *os.File) (rgb, error) {
 	m, _, err := image.Decode(r)
 	if err != nil {
-		panic(err)
+		return rgb{}, err
 	}
 
 	bounds := m.Bounds()
@@ -36,19 +37,25 @@ func getMostUsedColor(r *os.File) rgb {
 		b_total += b >> 8
 	}
 
-	r_total = r_total / count
-	g_total = g_total / count
-	b_total = b_total / count
+	r_total /= count
+	g_total /= count
+	b_total /= count
 
-	return rgb{r_total, g_total, b_total}
+	return rgb{r_total, g_total, b_total}, nil
 }
 
 func main() {
 	reader, err := os.Open("./image/CuteCat.png")
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to open image: $v", err)
 	}
-	rgb := getMostUsedColor(reader)
 
-	fmt.Printf("red: %v \ngreen: %v \nblue: %v \n", rgb.red, rgb.green, rgb.blue)
+	defer reader.Close()
+
+	rgb, err := getCommonColor(reader)
+	if err != nil {
+		log.Fatal("Failed to get common color: $v", err)
+	}
+
+	fmt.Printf("rgb(%v, %v, %v)\n", rgb.red, rgb.green, rgb.blue)
 }
