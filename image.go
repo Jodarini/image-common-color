@@ -6,14 +6,13 @@ import (
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
-	"log"
 	"net/http"
 )
 
 type rgb struct {
-	red   uint32 `json:"red"`
-	green uint32 `json:"green"`
-	blue  uint32 `json:"blue"`
+	Red   uint32 `json:"red"`
+	Green uint32 `json:"green"`
+	Blue  uint32 `json:"blue"`
 }
 
 func getCommonColor(url string) (rgb, error) {
@@ -57,14 +56,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-
-	rgb, err := getCommonColor(url)
-	if err != nil {
-		log.Fatal("Failed to get common color: $v", err)
-	}
-
-	fmt.Fprintf(w, "<h1>Hello from Go!</h1> %v", url)
-	fmt.Fprintf(w, "<p>Red: %v</p> <p>Green: %v</p> <p>Blue: %v</p>", rgb.red, rgb.green, rgb.blue)
 
 	color, err := getCommonColor(url)
 	if err != nil {
