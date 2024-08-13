@@ -6,6 +6,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -15,8 +16,13 @@ type rgb struct {
 	blue  uint32
 }
 
-func getCommonColor(r *os.File) (rgb, error) {
-	m, _, err := image.Decode(r)
+func getCommonColor(url string) (rgb, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return rgb{}, err
+	}
+
+	m, _, err := image.Decode(resp.Body)
 	if err != nil {
 		return rgb{}, err
 	}
@@ -52,7 +58,7 @@ func main() {
 
 	defer reader.Close()
 
-	rgb, err := getCommonColor(reader)
+	rgb, err := getCommonColor("https://i.scdn.co/image/ab67616d00001e02bfa99afb5ef0d26d5064b23b")
 	if err != nil {
 		log.Fatal("Failed to get common color: $v", err)
 	}
